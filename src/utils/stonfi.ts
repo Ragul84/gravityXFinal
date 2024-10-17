@@ -59,26 +59,32 @@ export async function buyJettonOnStonfi(wallet: WalletContractV4, jettonAddress:
 }
 
 export async function sellJettonOnStonfi(wallet: WalletContractV4, jettonAddress: string, keyPair: KeyPair) {
-    const contract = client.open(wallet);
-    const tonBalance = await contract.getBalance();
-    const jettonAsset = await stonApiClient.getWalletAsset({walletAddress: wallet.address.toString(), assetAddress: jettonAddress});
-    const jettonBalance = jettonAsset.balance? jettonAsset.balance : '0';
-    if(Number(jettonBalance) > 0 && Number(fromNano(tonBalance)) > 0.3) {
-        const txArgs = {
-            userWalletAddress: wallet.address.toString(), // ! replace with your address
-            offerJettonAddress: jettonAddress, // jetton address
-            offerAmount: jettonBalance,
-            proxyTon: new pTON.v1(),
-            minAskAmount: '1',
+    try {
+        const contract = client.open(wallet);
+        const tonBalance = await contract.getBalance();
+        const jettonAsset = await stonApiClient.getWalletAsset({walletAddress: wallet.address.toString(), assetAddress: jettonAddress});
+        const jettonBalance = jettonAsset.balance? jettonAsset.balance : '0';
+        if(Number(jettonBalance) > 0 && Number(fromNano(tonBalance)) > 0.3) {
+            const txArgs = {
+                userWalletAddress: wallet.address.toString(), // ! replace with your address
+                offerJettonAddress: jettonAddress, // jetton address
+                offerAmount: jettonBalance,
+                proxyTon: new pTON.v1(),
+                minAskAmount: '1',
+            }
+        
+        // you can instantly send the transaction using the router method with send suffix
+            await dex.sendSwapJettonToTon(contract.sender(keyPair.secretKey), txArgs);
+            return true;
         }
-    
-      // you can instantly send the transaction using the router method with send suffix
-        await dex.sendSwapJettonToTon(contract.sender(keyPair.secretKey), txArgs);
-        return true;
-    }
-    else {
+        else {
+            return false;
+        }
+    } catch (error) {
+        console.log(error);
         return false;
     }
+    
 
 }
 
